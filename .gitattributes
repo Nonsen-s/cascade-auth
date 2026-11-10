@@ -1,4 +1,4 @@
-* text=auto
+* text=auto eol=lf
 # Migration checksums must remain identical on Windows and Linux.
 *.sql text eol=lf
 Dockerfile text eol=lf
