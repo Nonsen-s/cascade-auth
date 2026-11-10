@@ -1,0 +1,28 @@
+# Private local files and preserved QA/archive.
+local-only/
+.local/
+.env
+.env.*
+!.env.example
+!.env.server.example
+!.env.docker.example
+
+# Dependencies, caches and generated build output.
+**/node_modules/
+.npm-cache/
+dist/
+server/dist/
+*.tsbuildinfo
+
+# Generated verification artifacts, including legacy output locations.
+coverage/
+output/
+test-results/
+playwright-report/
+.playwright-cli/
+npm-debug.log*
+
+# Machine-specific file metadata.
+.DS_Store
+Thumbs.db
+Desktop.ini

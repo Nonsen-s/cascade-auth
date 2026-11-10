@@ -1,0 +1,102 @@
+name: cascade-auth-local
+
+x-backend: &backend
+  image: cascade-auth-api:local
+  build:
+    context: .
+    dockerfile: server/Dockerfile
+    target: runtime
+  environment:
+    # Local HTTP and the captured SMTP mailbox are development services.
+    NODE_ENV: development
+    HOST: 0.0.0.0
+    PORT: '3001'
+    APP_ORIGIN: ${APP_ORIGIN:?Run npm run docker:setup first}
+    APP_SECRET: ${APP_SECRET:?Run npm run docker:setup first}
+    DB_DRIVER: postgres
+    DATABASE_URL: postgresql://cascade:${POSTGRES_PASSWORD:?Run npm run docker:setup first}@postgres:5432/cascade
+    DATABASE_SSL: 'false'
+    AUTO_MIGRATE: 'false'
+    MAIL_TRANSPORT: smtp
+    MAIL_FROM: accounts@example.test
+    SMTP_HOST: mailpit
+    SMTP_PORT: '1025'
+    SMTP_ALLOW_PLAINTEXT: 'true'
+    MAIL_ACTIVE_KEY_ID: v1
+    MAIL_ENCRYPTION_KEYS: ${MAIL_ENCRYPTION_KEYS:?Run npm run docker:setup first}
+    RUN_MAIL_WORKER: 'true'
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cascade
+      POSTGRES_DB: cascade
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run docker:setup first}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'pg_isready',
+          '-h',
+          '127.0.0.1',
+          '-U',
+          'cascade',
+          '-d',
+          'cascade',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${MAILPIT_PORT:-8025}:8025'
+
+  migrate:
+    <<: *backend
+    command: ['node', 'server/dist/migrate.js']
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  api:
+    <<: *backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+
+  web:
+    image: cascade-auth-web:local
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+volumes:
+  postgres-data:

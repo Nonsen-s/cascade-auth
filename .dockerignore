@@ -1,0 +1,23 @@
+# Only these inputs may enter an image build context.
+**
+!package.json
+!package-lock.json
+!index.html
+!vite.config.ts
+!tsconfig*.json
+!server/
+!server/src/
+!server/src/**
+!server/migrations/
+!server/migrations/**
+!server/tsconfig.json
+!server/tsup.config.ts
+!server/Dockerfile
+!shared/
+!shared/**
+!src/
+!src/**
+!public/
+!public/**
+!docker/
+!docker/**

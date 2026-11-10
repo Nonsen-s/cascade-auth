@@ -1,0 +1,12 @@
+node_modules
+.npm-cache
+dist
+server/dist
+.local
+local-only
+coverage
+output
+test-results
+playwright-report
+package-lock.json
+.playwright-cli
